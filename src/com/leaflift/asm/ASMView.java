@@ -2,10 +2,8 @@ package com.leaflift.asm;
 
 
 import static com.codename1.ui.CN.*;
-import com.codename1.ui.Display;
 import com.codename1.ui.Form;
 import userclasses.StateMachine;
-import com.codename1.io.Log;
 import com.codename1.ui.Toolbar;
 
 /**
