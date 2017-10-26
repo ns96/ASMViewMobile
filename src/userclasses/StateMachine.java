@@ -168,10 +168,11 @@ public class StateMachine extends StateMachineBase {
                 bt.connect(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent evt) {
+                        ip.dispose();
+                        
                         Object obj = evt.getSource();
                         console.setText("Connected to Bluetooth LE device ...\n" + obj);
                         discover(); // must be called on Andriod. Won't do anything on ios though
-                        ip.dispose();
                         connected = true;
                     }
 
@@ -191,7 +192,7 @@ public class StateMachine extends StateMachineBase {
      * found
      */
     private void discover() {
-        TextArea console = findSensorTextArea();
+        final TextArea console = findSensorTextArea();
 
         try {
             bt.discover(new ActionListener() {
@@ -210,6 +211,7 @@ public class StateMachine extends StateMachineBase {
         // if we running on is add the subscriber here since the above bt call
         // does nothing?
         if (Display.getInstance().getPlatformName().equals("ios")) {
+            console.setText("Adding subscriber for iOS Device");
             addSubscriber();
         }
     }
@@ -222,6 +224,8 @@ public class StateMachine extends StateMachineBase {
 
         try {
             bt.subscribe(new ActionListener() {
+                StringBuilder sb= new StringBuilder();
+                
                 @Override
                 public void actionPerformed(ActionEvent evt) {
                     JSONObject dataIncoming = (JSONObject) evt.getSource();
@@ -231,11 +235,13 @@ public class StateMachine extends StateMachineBase {
                             base64Value = dataIncoming.getString("value");
                         }
                     } catch (JSONException e) {
-                        e.printStackTrace();
+                        console.setText("Error reading data: " + e.getMessage());
                     }
 
                     String message = new String(Base64.decode(base64Value.getBytes()));
-                    console.setText("Data received..." + message);
+                    sb.append(message);
+                    
+                    console.setText("Data received: " + sb.toString());
                 }
 
             }, bleAddress, UUID_SERVICE, UUID_RX);
@@ -292,6 +298,7 @@ public class StateMachine extends StateMachineBase {
             try {
                 if (connected) {
                     bt.close(bleAddress);
+                    connected = false;
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
