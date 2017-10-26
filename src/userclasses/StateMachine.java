@@ -15,7 +15,10 @@ import com.codename1.ui.list.DefaultListModel;
 import com.codename1.ui.list.ListModel;
 import com.codename1.ui.spinner.Picker;
 import com.codename1.ui.util.Resources;
+import com.codename1.util.Base64;
+import com.codename1.util.StringUtil;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -24,12 +27,19 @@ import java.util.Set;
 
 /**
  *
- * @author Your name here
+ * @author Nathan Stevens
+ * 
  */
 public class StateMachine extends StateMachineBase {
-
+    // https://github.com/adafruit/Bluefruit_LE_Connect_Android/blob/master/app/src/main/java/com/adafruit/bluefruit/le/connect/app/UartInterfaceActivity.java
+    public static final String UUID_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    public static final String UUID_RX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+    public static final String UUID_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+    
     private Bluetooth bt;
     private Map devices = new HashMap();
+    private String bleAddress;
+    private boolean connected = false;
 
     public StateMachine(String resFile) {
         super(resFile);
@@ -43,38 +53,49 @@ public class StateMachine extends StateMachineBase {
      */
     protected void initVars(Resources res) {
         bt = new Bluetooth();
+        bleAddress = "";
     }
 
     @Override
     protected void beforeMain(Form f) {
         super.beforeMain(f); //To change body of generated methods, choose Tools | Templates.
-        
+
         // update the picker
         Picker sp = findSyncPicker(f);
         sp.setStrings("Sync Every 10 min", "Sync Every 15 min", "Sync Every 30 min", "Sync Every 60 min");
         sp.setSelectedStringIndex(1);
     }
-    
+
     @Override
     protected void onMain_ScanButtonAction(Component c, ActionEvent event) {
         try {
             bt.initialize(true, false, "bluetoothleplugin");
             scanBluetoothDevices();
-            
-            if(!devices.isEmpty()) {
-                findLocationTextField().setText("BT Initialized ***");
-            } else {
-                findLocationTextField().setText("NO BT Devices found ***");
-            }
         } catch (Exception ex) {
             ex.printStackTrace();
-            findLocationTextField().setText("BT NOT Initialized ...");
+            addDummyDevices();
+            bt = null;
         }
     }
-    
+
+    private void addDummyDevices() {
+        try {
+            // add somedum data for testing
+            JSONObject obj = new JSONObject();
+            obj.put("address", "00:00:00:00:00:00");
+            obj.put("name", "Dummy BLE");
+            devices.put("00:00:00:00:00:00", obj);
+
+            updateAddressPicker();
+        } catch (JSONException ex) {
+            ex.printStackTrace();
+        }
+    }
+
     /**
      * Scan for bluetooth devices
-     * @throws IOException 
+     *
+     * @throws IOException
      */
     private void scanBluetoothDevices() throws IOException {
         bt.startScan(new ActionListener() {
@@ -87,8 +108,10 @@ public class StateMachine extends StateMachineBase {
                     if (res.getString("status").equals("scanResult")) {
                         //if this is a new device add it
                         if (!devices.containsKey(res.getString("address"))) {
-                            devices.put(res.getString("address"), res);
-                            updateAddressPicker();
+                            if (!res.getString("name").equals("null")) {
+                                devices.put(res.getString("address"), res);
+                                updateAddressPicker();
+                            }
                         }
                     }
                 } catch (JSONException ex) {
@@ -105,25 +128,158 @@ public class StateMachine extends StateMachineBase {
     private void updateAddressPicker() throws JSONException {
         Picker addressPicker = findAddressPicker();
         ArrayList<String> al = new ArrayList<>();
-        
+
         Set keys = devices.keySet();
-        int count = 0;
         for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
             String address = (String) iterator.next();
             JSONObject obj = (JSONObject) devices.get(address);
             String name = obj.getString("name");
-            al.add(count + " -- " + address);
-            
-            count++;
+            al.add(name + " || " + address);
         }
-        
+
         String[] addresses = al.toArray(new String[al.size()]);
         addressPicker.setStrings(addresses);
     }
 
     @Override
     protected void onMain_AddressPickerAction(Component c, ActionEvent event) {
-        
-    
+        Picker addressPicker = (Picker) c;
+        String ss = addressPicker.getSelectedString();
+        bleAddress = StringUtil.tokenize(ss, "||").get(1);
+        bleAddress = bleAddress.trim();
+        connect(bleAddress);
     }
+
+    private void connect(String address) {
+        final TextArea console = findSensorTextArea();
+
+        if (bt != null) {
+            try {
+                bt.connect(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent evt) {
+                        Object obj = evt.getSource();
+                        console.setText("Connected to Bluetooth LE device ...\n" + obj);
+                        discover(); // must be called on Andriod. Won't do anything on ios though
+                        connected = true;
+                    }
+
+                }, address);
+            } catch (IOException ex) {
+                String message = "Error connecting to bluetooth device: " + address;
+                console.setText(message + "\n" + ex.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * This method needs to be called on Android other wise the service is not found
+     */
+    private void discover() {
+        TextArea console = findSensorTextArea();
+        
+        try {
+            bt.discover(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent evt) {
+                        console.setText("Bluetooth LE Information obtained ...\n");
+                        addSubscriber();
+                    }
+
+                }, bleAddress);
+
+        } catch (Exception ex) {
+            console.setText(ex.getMessage());
+        }
+        
+        // if we running on is add the subscriber here since the above bt call
+        // does nothing?
+        if(Display.getInstance().getPlatformName().equals("ios")) {
+            addSubscriber();
+        }
+    }
+    
+    /**
+     * Method to listen for incoming data
+     */
+    private void addSubscriber() {
+        final TextArea console = findSensorTextArea();
+
+        try {
+            bt.subscribe(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    JSONObject dataIncoming = (JSONObject) evt.getSource();
+                    String base64Value = "";
+                    try {
+                        if (dataIncoming.getString("status").equals("subscribedResult")) {
+                            base64Value = dataIncoming.getString("value");
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    
+                    String message = new String(Base64.decode(base64Value.getBytes()));
+                    console.setText("Data received..." + message);
+                }
+
+            }, bleAddress, UUID_SERVICE, UUID_RX);
+            
+            String message = console.getText() + "\n\nSubcriber added ...";
+            console.setText(message);
+        } catch (IOException ex) {
+            String message = "Error subscribing ..." + ex.getMessage();
+            console.setText(message);
+        }
+    }
+    
+    /**
+     * Send text but first add CR LF and then encode in base64 otherwise doesn't work
+     * @param text 
+     */
+    private void sendText(String text) {
+        final TextArea console = findSensorTextArea();
+        final String data = text + "\r\n";
+        
+        try {
+            String b64String = Base64.encode(data.getBytes());
+            
+            bt.write(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    console.setText("Data sent: " + data);
+                }
+
+            }, bleAddress, UUID_SERVICE, UUID_TX, b64String, false);
+        } catch (IOException ex) {
+            String message = "Error sending: " + text + "\n"
+                    + UUID_SERVICE + "\n"
+                    + UUID_TX + "\n"
+                    + ex.getMessage();
+            console.setText(message);
+        }
+    }
+
+    @Override
+    protected void onMain_UpdateButtonAction(Component c, ActionEvent event) {
+        if(connected) {
+            sendText("ASM Test send ...");
+        }
+    }
+
+    @Override
+    protected void exitMain(Form f) {
+        super.exitMain(f);
+
+        if (bt != null) {
+            try {
+                if (connected) {
+                    bt.close(bleAddress);
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
 }
