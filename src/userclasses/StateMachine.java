@@ -241,7 +241,10 @@ public class StateMachine extends StateMachineBase {
                     String message = new String(Base64.decode(base64Value.getBytes()));
                     sb.append(message);
                     
-                    console.setText("Data received: " + sb.toString());
+                    if(message.endsWith("\r\n")) {
+                        console.setText("Data received: " + sb.toString());
+                        sb = new StringBuilder();
+                    }
                 }
 
             }, bleAddress, UUID_SERVICE, UUID_RX);

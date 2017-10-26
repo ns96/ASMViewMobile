@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<component type="Form" name="Main" cloudDestinationProperty="Main" scrollableY="false" layout="BorderLayout" borderLayoutAbsoluteCenter="false" title="ASMView v0.1.48 (10/26/2017)" >
+<component type="Form" name="Main" cloudDestinationProperty="Main" scrollableY="false" layout="BorderLayout" borderLayoutAbsoluteCenter="false" title="ASMView v0.1.51 (10/26/2017)" >
   <component type="Tabs" name="Tabs1" cloudDestinationProperty="Tabs1" >
     <layoutConstraint value="Center" />
     <custom name="titles" type="java.lang.String" array="true" dimensions="1" >
