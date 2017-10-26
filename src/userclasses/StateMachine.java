@@ -8,6 +8,7 @@ package userclasses;
 import ca.weblite.codename1.json.JSONException;
 import ca.weblite.codename1.json.JSONObject;
 import com.codename1.bluetoothle.Bluetooth;
+import com.codename1.components.InfiniteProgress;
 import generated.StateMachineBase;
 import com.codename1.ui.*;
 import com.codename1.ui.events.*;
@@ -28,14 +29,15 @@ import java.util.Set;
 /**
  *
  * @author Nathan Stevens
- * 
+ *
  */
 public class StateMachine extends StateMachineBase {
+
     // https://github.com/adafruit/Bluefruit_LE_Connect_Android/blob/master/app/src/main/java/com/adafruit/bluefruit/le/connect/app/UartInterfaceActivity.java
     public static final String UUID_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
     public static final String UUID_RX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
     public static final String UUID_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-    
+
     private Bluetooth bt;
     private Map devices = new HashMap();
     private String bleAddress;
@@ -145,15 +147,23 @@ public class StateMachine extends StateMachineBase {
     protected void onMain_AddressPickerAction(Component c, ActionEvent event) {
         Picker addressPicker = (Picker) c;
         String ss = addressPicker.getSelectedString();
-        bleAddress = StringUtil.tokenize(ss, "||").get(1);
-        bleAddress = bleAddress.trim();
-        connect(bleAddress);
+        String address = StringUtil.tokenize(ss, "||").get(1).trim();
+        connect(address);
     }
 
+    /**
+     * Connect to a particular bluetooth device
+     *
+     * @param address
+     */
     private void connect(String address) {
+        bleAddress = address;
         final TextArea console = findSensorTextArea();
 
-        if (bt != null) {
+        if (bt != null && !connected) {
+            // start an infit progress
+            final Dialog ip = new InfiniteProgress().showInifiniteBlocking();
+
             try {
                 bt.connect(new ActionListener() {
                     @Override
@@ -161,6 +171,7 @@ public class StateMachine extends StateMachineBase {
                         Object obj = evt.getSource();
                         console.setText("Connected to Bluetooth LE device ...\n" + obj);
                         discover(); // must be called on Andriod. Won't do anything on ios though
+                        ip.dispose();
                         connected = true;
                     }
 
@@ -169,36 +180,40 @@ public class StateMachine extends StateMachineBase {
                 String message = "Error connecting to bluetooth device: " + address;
                 console.setText(message + "\n" + ex.getMessage());
             }
+        } else {
+            String message = "BLE device is null, or already conectede to: " + address;
+            console.setText(message);
         }
     }
-    
+
     /**
-     * This method needs to be called on Android other wise the service is not found
+     * This method needs to be called on Android other wise the service is not
+     * found
      */
     private void discover() {
         TextArea console = findSensorTextArea();
-        
+
         try {
             bt.discover(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent evt) {
-                        console.setText("Bluetooth LE Information obtained ...\n");
-                        addSubscriber();
-                    }
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    console.setText("Bluetooth LE Information obtained ...\n");
+                    addSubscriber();
+                }
 
-                }, bleAddress);
+            }, bleAddress);
 
         } catch (Exception ex) {
             console.setText(ex.getMessage());
         }
-        
+
         // if we running on is add the subscriber here since the above bt call
         // does nothing?
-        if(Display.getInstance().getPlatformName().equals("ios")) {
+        if (Display.getInstance().getPlatformName().equals("ios")) {
             addSubscriber();
         }
     }
-    
+
     /**
      * Method to listen for incoming data
      */
@@ -218,13 +233,13 @@ public class StateMachine extends StateMachineBase {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-                    
+
                     String message = new String(Base64.decode(base64Value.getBytes()));
                     console.setText("Data received..." + message);
                 }
 
             }, bleAddress, UUID_SERVICE, UUID_RX);
-            
+
             String message = console.getText() + "\n\nSubcriber added ...";
             console.setText(message);
         } catch (IOException ex) {
@@ -232,18 +247,20 @@ public class StateMachine extends StateMachineBase {
             console.setText(message);
         }
     }
-    
+
     /**
-     * Send text but first add CR LF and then encode in base64 otherwise doesn't work
-     * @param text 
+     * Send text but first add CR LF and then encode in base64 otherwise doesn't
+     * work
+     *
+     * @param text
      */
     private void sendText(String text) {
         final TextArea console = findSensorTextArea();
         final String data = text + "\r\n";
-        
+
         try {
             String b64String = Base64.encode(data.getBytes());
-            
+
             bt.write(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent evt) {
@@ -262,7 +279,7 @@ public class StateMachine extends StateMachineBase {
 
     @Override
     protected void onMain_UpdateButtonAction(Component c, ActionEvent event) {
-        if(connected) {
+        if (connected) {
             sendText("ASM Test send ...");
         }
     }
