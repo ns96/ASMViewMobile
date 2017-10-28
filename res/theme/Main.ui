@@ -1,61 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<component type="Form" name="Main" cloudDestinationProperty="Main" scrollableY="false" layout="BorderLayout" borderLayoutAbsoluteCenter="false" title="ASMView v0.1.51 (10/26/2017)" >
+<component type="Form" name="Main" cloudDestinationProperty="Main" scrollableY="false" layout="BorderLayout" borderLayoutAbsoluteCenter="false" title="ASMView v0.1.66 (10/27/2017)" >
   <component type="Tabs" name="Tabs1" cloudDestinationProperty="Tabs1" >
     <layoutConstraint value="Center" />
     <custom name="titles" type="java.lang.String" array="true" dimensions="1" >
-      <str>Node Info</str>
-      <str>Node Sensors</str>
-      <str>Node Data</str>
+      <str>Setup</str>
+      <str>Info</str>
+      <str>Data</str>
     </custom>
-    <component type="Container" name="Container" tabTitle="Node Info" cloudDestinationProperty="Container" layout="BorderLayout" borderLayoutAbsoluteCenter="false" >
+    <component type="Container" name="Container" tabTitle="Setup" cloudDestinationProperty="Container" layout="BorderLayout" borderLayoutAbsoluteCenter="false" >
       <component type="Container" name="Container2" cloudDestinationProperty="Container2" scrollableY="true" layout="BoxLayout" boxLayoutAxis="Y" >
         <layoutConstraint value="North" />
         <component type="Button" name="scanButton" cloudDestinationProperty="scanButton" text="Scan" >
         </component>
-        <component type="Picker" name="addressPicker" cloudDestinationProperty="addressPicker" text="Please Scan for Devices" >
+        <component type="Picker" name="addressPicker" cloudDestinationProperty="addressPicker" text="Press Scan And Wait ..." >
         </component>
         <component type="Label" name="locationLabel" cloudDestinationProperty="locationLabel" text="Location" >
         </component>
-        <component type="TextField" name="locationTextField" cloudBoundProperty="text" cloudDestinationProperty="locationTextField" text="" >
+        <component type="TextField" name="locationTextField" cloudBoundProperty="text" cloudDestinationProperty="locationTextField" text="Location 1" >
         </component>
         <component type="Label" name="nameLabel" cloudDestinationProperty="nameLabel" text="Node Name" >
         </component>
-        <component type="TextField" name="nameTextField" cloudBoundProperty="text" cloudDestinationProperty="nameTextField" focusable="false" text="" >
+        <component type="TextField" name="nameTextField" cloudBoundProperty="text" cloudDestinationProperty="nameTextField" focusable="false" text="Node 1" >
         </component>
         <component type="Label" name="ssidLabel" cloudDestinationProperty="ssidLabel" text="Wifi SSID" >
         </component>
-        <component type="TextField" name="ssidTextField" cloudBoundProperty="text" cloudDestinationProperty="ssidTextField" text="" >
+        <component type="TextField" name="ssidTextField" cloudBoundProperty="text" cloudDestinationProperty="ssidTextField" text="SA999" >
         </component>
         <component type="Label" name="passwordLabel" cloudDestinationProperty="passwordLabel" text="Wifi Password" >
         </component>
-        <component type="TextField" name="passwordTextField" cloudBoundProperty="text" cloudDestinationProperty="passwordTextField" text="" >
+        <component type="TextField" name="passwordTextField" cloudBoundProperty="text" cloudDestinationProperty="passwordTextField" text="758C90F421" >
         </component>
         <component type="Label" name="urlLabel" cloudDestinationProperty="urlLabel" text="Server URL" >
         </component>
-        <component type="TextField" name="urlTextField" cloudBoundProperty="text" cloudDestinationProperty="urlTextField" text="" >
+        <component type="TextField" name="urlTextField" cloudBoundProperty="text" cloudDestinationProperty="urlTextField" text="http://api-quadroponic.rhcloud.com/v1/record/sensordata" >
         </component>
         <component type="Picker" name="syncPicker" cloudDestinationProperty="syncPicker" text="Server Sync Schedule" >
         </component>
-        <component type="Button" name="updateButton" cloudDestinationProperty="Button" text="Update" >
+        <component type="Button" name="readButton" cloudDestinationProperty="readButton" enabled="false" text="Read" >
+        </component>
+        <component type="Button" name="updateButton" cloudDestinationProperty="Button" enabled="false" text="Update" >
+        </component>
+        <component type="Button" name="disconnectButton" cloudDestinationProperty="disconnectButton" enabled="false" text="Disconnect" >
         </component>
       </component>
     </component>
-    <component type="Container" name="Container1" tabTitle="Node Sensors" cloudDestinationProperty="Container1" layout="BorderLayout" borderLayoutAbsoluteCenter="false" >
+    <component type="Container" name="Container1" tabTitle="Info" cloudDestinationProperty="Container1" layout="BorderLayout" borderLayoutAbsoluteCenter="false" >
       <component type="TextArea" name="sensorTextArea" cloudBoundProperty="text" cloudDestinationProperty="sensorTextArea" text="Information about sensor goes here ..." >
         <layoutConstraint value="Center" />
       </component>
-      <component type="Container" name="Container4" cloudDestinationProperty="Container4" rtl="false" layout="GridLayout" gridLayoutRows="1" gridLayoutColumns="3" >
+      <component type="Container" name="Container4" cloudDestinationProperty="Container4" rtl="false" layout="GridLayout" gridLayoutRows="1" gridLayoutColumns="2" >
         <layoutConstraint value="South" />
-        <component type="Button" name="readButton" cloudDestinationProperty="readButton" text="Read" >
-        </component>
-        <component type="CheckBox" name="autoReadCheckBox" cloudDestinationProperty="autoReadCheckBox" text="Refresh" selected="true" >
+        <component type="CheckBox" name="autoReadCheckBox" cloudDestinationProperty="autoReadCheckBox" text="READ DATA" selected="false" >
         </component>
         <component type="Button" name="filesButton" cloudDestinationProperty="filesButton" text="Get Files" >
         </component>
       </component>
     </component>
-    <component type="Container" name="Container3" tabTitle="Node Data" cloudDestinationProperty="Container3" layout="BorderLayout" borderLayoutAbsoluteCenter="false" >
+    <component type="Container" name="Container3" tabTitle="Data" cloudDestinationProperty="Container3" layout="BorderLayout" borderLayoutAbsoluteCenter="false" >
       <component type="Container" name="Container5" cloudDestinationProperty="Container5" layout="GridLayout" gridLayoutRows="1" gridLayoutColumns="2" >
         <layoutConstraint value="North" />
         <component type="Label" name="dataLabel" cloudDestinationProperty="dataLabel" text="Node Data Files" >

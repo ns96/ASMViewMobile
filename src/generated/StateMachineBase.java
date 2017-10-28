@@ -340,6 +340,18 @@ public abstract class StateMachineBase extends UIBuilder {
         return cmp;
     }
 
+    public com.codename1.ui.Button findDisconnectButton(Component root) {
+        return (com.codename1.ui.Button)findByName("disconnectButton", root);
+    }
+
+    public com.codename1.ui.Button findDisconnectButton() {
+        com.codename1.ui.Button cmp = (com.codename1.ui.Button)findByName("disconnectButton", Display.getInstance().getCurrent());
+        if(cmp == null && aboutToShowThisContainer != null) {
+            cmp = (com.codename1.ui.Button)findByName("disconnectButton", aboutToShowThisContainer);
+        }
+        return cmp;
+    }
+
     public com.codename1.ui.TextField findUrlTextField(Component root) {
         return (com.codename1.ui.TextField)findByName("urlTextField", root);
     }
@@ -618,16 +630,20 @@ public abstract class StateMachineBase extends UIBuilder {
                 onMain_SyncPickerAction(c, event);
                 return;
             }
+            if("readButton".equals(c.getName())) {
+                onMain_ReadButtonAction(c, event);
+                return;
+            }
             if("updateButton".equals(c.getName())) {
                 onMain_UpdateButtonAction(c, event);
                 return;
             }
-            if("sensorTextArea".equals(c.getName())) {
-                onMain_SensorTextAreaAction(c, event);
+            if("disconnectButton".equals(c.getName())) {
+                onMain_DisconnectButtonAction(c, event);
                 return;
             }
-            if("readButton".equals(c.getName())) {
-                onMain_ReadButtonAction(c, event);
+            if("sensorTextArea".equals(c.getName())) {
+                onMain_SensorTextAreaAction(c, event);
                 return;
             }
             if("autoReadCheckBox".equals(c.getName())) {
@@ -669,13 +685,16 @@ public abstract class StateMachineBase extends UIBuilder {
       protected void onMain_SyncPickerAction(Component c, ActionEvent event) {
       }
 
+      protected void onMain_ReadButtonAction(Component c, ActionEvent event) {
+      }
+
       protected void onMain_UpdateButtonAction(Component c, ActionEvent event) {
       }
 
-      protected void onMain_SensorTextAreaAction(Component c, ActionEvent event) {
+      protected void onMain_DisconnectButtonAction(Component c, ActionEvent event) {
       }
 
-      protected void onMain_ReadButtonAction(Component c, ActionEvent event) {
+      protected void onMain_SensorTextAreaAction(Component c, ActionEvent event) {
       }
 
       protected void onMain_AutoReadCheckBoxAction(Component c, ActionEvent event) {

@@ -12,19 +12,17 @@ import com.codename1.components.InfiniteProgress;
 import generated.StateMachineBase;
 import com.codename1.ui.*;
 import com.codename1.ui.events.*;
-import com.codename1.ui.list.DefaultListModel;
-import com.codename1.ui.list.ListModel;
 import com.codename1.ui.spinner.Picker;
 import com.codename1.ui.util.Resources;
 import com.codename1.util.Base64;
 import com.codename1.util.StringUtil;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
 
 /**
  *
@@ -43,6 +41,13 @@ public class StateMachine extends StateMachineBase {
     private String bleAddress;
     private boolean connected = false;
 
+    // global gui components
+    private TextArea console;
+
+    private boolean onSimulator = false;
+    
+    private boolean autoRead = true;
+
     public StateMachine(String resFile) {
         super(resFile);
         // do not modify, write code in initVars and initialize class members there,
@@ -56,11 +61,30 @@ public class StateMachine extends StateMachineBase {
     protected void initVars(Resources res) {
         bt = new Bluetooth();
         bleAddress = "";
-    }
 
+        String os = System.getProperty("os.name");
+        if (os != null && os.indexOf("Windows") != -1) {
+            System.out.println("Running on simulator");
+            onSimulator = true;
+        }
+    }
+    
+    /**
+     * Used to enable buttons once connected
+     * @param enable 
+     */
+    private void enableButtons(boolean enable) {
+        findDisconnectButton().setEnabled(true);
+        findUpdateButton().setEnabled(true);
+        findReadButton().setEnabled(true);
+    }
+    
     @Override
     protected void beforeMain(Form f) {
         super.beforeMain(f); //To change body of generated methods, choose Tools | Templates.
+
+        // set the conole object
+        console = findSensorTextArea(f);
 
         // update the picker
         Picker sp = findSyncPicker(f);
@@ -74,7 +98,6 @@ public class StateMachine extends StateMachineBase {
             bt.initialize(true, false, "bluetoothleplugin");
             scanBluetoothDevices();
         } catch (Exception ex) {
-            ex.printStackTrace();
             addDummyDevices();
             bt = null;
         }
@@ -83,10 +106,12 @@ public class StateMachine extends StateMachineBase {
     private void addDummyDevices() {
         try {
             // add somedum data for testing
-            JSONObject obj = new JSONObject();
-            obj.put("address", "00:00:00:00:00:00");
-            obj.put("name", "Dummy BLE");
-            devices.put("00:00:00:00:00:00", obj);
+            for (int i = 1; i <= 5; i++) {
+                JSONObject obj = new JSONObject();
+                obj.put("address", "00:00:00:00:00:00");
+                obj.put("name", "Dummy BLE" + i);
+                devices.put("00:00:00:00:00:0" + i, obj);
+            }
 
             updateAddressPicker();
         } catch (JSONException ex) {
@@ -147,8 +172,11 @@ public class StateMachine extends StateMachineBase {
     protected void onMain_AddressPickerAction(Component c, ActionEvent event) {
         Picker addressPicker = (Picker) c;
         String ss = addressPicker.getSelectedString();
-        String address = StringUtil.tokenize(ss, "||").get(1).trim();
-        connect(address);
+
+        if (ss != null) {
+            String address = StringUtil.tokenize(ss, "||").get(1).trim();
+            connect(address);
+        }
     }
 
     /**
@@ -158,10 +186,19 @@ public class StateMachine extends StateMachineBase {
      */
     private void connect(String address) {
         bleAddress = address;
-        final TextArea console = findSensorTextArea();
 
-        if (bt != null && !connected) {
-            // start an infit progress
+        if (bt == null) {
+            String message = "BLE device not supported ...";
+            print(message, false);
+
+            // ***DEBUG CODE***
+            enableButtons(true);
+            connected = true;
+            return;
+        }
+
+        if (!connected) {
+            // start an infinite progress dialog
             final Dialog ip = new InfiniteProgress().showInifiniteBlocking();
 
             try {
@@ -169,21 +206,25 @@ public class StateMachine extends StateMachineBase {
                     @Override
                     public void actionPerformed(ActionEvent evt) {
                         ip.dispose();
-                        
+
                         Object obj = evt.getSource();
-                        console.setText("Connected to Bluetooth LE device ...\n" + obj);
+                        print("Connected to Bluetooth LE device ...\n" + obj, true);
                         discover(); // must be called on Andriod. Won't do anything on ios though
+                        
                         connected = true;
+                        enableButtons(true);
                     }
 
                 }, address);
             } catch (IOException ex) {
+                ip.dispose();
+
                 String message = "Error connecting to bluetooth device: " + address;
-                console.setText(message + "\n" + ex.getMessage());
+                print(message + "\n" + ex.getMessage(), false);
             }
         } else {
-            String message = "BLE device is null, or already conectede to: " + address;
-            console.setText(message);
+            String message = "BLE device already connected to: " + address;
+            print(message, false);
         }
     }
 
@@ -192,26 +233,24 @@ public class StateMachine extends StateMachineBase {
      * found
      */
     private void discover() {
-        final TextArea console = findSensorTextArea();
-
         try {
             bt.discover(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent evt) {
-                    console.setText("Bluetooth LE Information obtained ...\n");
+                    print("Bluetooth LE Information Received ...", true);
                     addSubscriber();
                 }
 
             }, bleAddress);
 
         } catch (Exception ex) {
-            console.setText(ex.getMessage());
+            print(ex.getMessage(), false);
         }
 
         // if we running on is add the subscriber here since the above bt call
         // does nothing?
         if (Display.getInstance().getPlatformName().equals("ios")) {
-            console.setText("Adding subscriber for iOS Device");
+            print("Adding subscriber for iOS Device", true);
             addSubscriber();
         }
     }
@@ -220,12 +259,10 @@ public class StateMachine extends StateMachineBase {
      * Method to listen for incoming data
      */
     private void addSubscriber() {
-        final TextArea console = findSensorTextArea();
-
         try {
             bt.subscribe(new ActionListener() {
-                StringBuilder sb= new StringBuilder();
-                
+                StringBuilder sb = new StringBuilder();
+
                 @Override
                 public void actionPerformed(ActionEvent evt) {
                     JSONObject dataIncoming = (JSONObject) evt.getSource();
@@ -240,21 +277,26 @@ public class StateMachine extends StateMachineBase {
 
                     String message = new String(Base64.decode(base64Value.getBytes()));
                     sb.append(message);
-                    
-                    if(message.endsWith("\r\n")) {
-                        console.setText("Data received: " + sb.toString());
+
+                    if (message.endsWith("\r\n")) {
+                        processData(sb.toString());
                         sb = new StringBuilder();
                     }
                 }
 
             }, bleAddress, UUID_SERVICE, UUID_RX);
 
-            String message = console.getText() + "\n\nSubcriber added ...";
+            String message = console.getText() + "\nSubcriber added ...";
             console.setText(message);
         } catch (IOException ex) {
-            String message = "Error subscribing ..." + ex.getMessage();
+            String message = "Error Subscribing: " + ex.getMessage();
             console.setText(message);
         }
+    }
+
+    private void processData(String data) {
+        data = data.trim();
+        print("Data received: " + data, true);
     }
 
     /**
@@ -263,9 +305,13 @@ public class StateMachine extends StateMachineBase {
      *
      * @param text
      */
-    private void sendText(String text) {
-        final TextArea console = findSensorTextArea();
-        final String data = text + "\r\n";
+    private void sendText(final String data) {
+
+        // check to make sure we not running on simulator
+        if (bt == null) {
+            print("BLE null >> Data Sent: " + data, true);
+            return;
+        }
 
         try {
             String b64String = Base64.encode(data.getBytes());
@@ -273,23 +319,75 @@ public class StateMachine extends StateMachineBase {
             bt.write(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent evt) {
-                    console.setText("Data sent: " + data);
+                    if(data.endsWith("\r\n")) {
+                        print("Data sent ...", true);
+                    }
                 }
 
             }, bleAddress, UUID_SERVICE, UUID_TX, b64String, false);
         } catch (IOException ex) {
-            String message = "Error sending: " + text + "\n"
+            String message = "Error sending: " + data + "\n"
                     + UUID_SERVICE + "\n"
                     + UUID_TX + "\n"
                     + ex.getMessage();
-            console.setText(message);
+            print(message, false);
         }
     }
-
+    
+    /**
+     * Used for send the long text since apparent BLE you can only 
+     * send 23 bytes at a time. As such split ascii text into chucks of 
+     * 20 characters
+     */
+    private void splitAndSend(String text) {
+        text += "\r\n";
+        
+        // first split data in chunk size of 20 chracters
+        ArrayList<String> sl = new ArrayList<>();
+        
+        char[] data = text.toCharArray();       
+        int len = data.length;
+        int chunkSize = 20;
+        
+        for (int i=0; i < len; i+= chunkSize) {
+            sl.add(new String(data, i, Math.min(chunkSize,len - i)));
+        }
+        
+        // now send chunks amd wait 100 ms to prevent any erros
+        for(String word: sl) {
+            sendText(word);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {}
+        }
+    }
+    
     @Override
     protected void onMain_UpdateButtonAction(Component c, ActionEvent event) {
         if (connected) {
-            sendText("ASM Test send ...");
+            String text = findLocationTextField().getText();
+            splitAndSend("SET LOCATION " + text);
+            
+            text = findNameTextField().getText();
+            splitAndSend("SET NAME " + text);
+            
+            text = findSsidTextField().getText();
+            splitAndSend("SET WIFI " + text);
+            
+            text = findPasswordTextField().getText();
+            splitAndSend("SET PASSWORD " + text);
+            
+            text = findUrlTextField().getText();
+            splitAndSend("SET URL " + text);
+            
+            text = StringUtil.tokenize(findSyncPicker().getSelectedString(), " ").get(2);
+            splitAndSend("SET SYNC " + text);
+            
+            // Sleep for a short time then send command to get status
+            try {
+                Thread.sleep(200);
+                splitAndSend("GET STATUS");
+            } catch (InterruptedException ex) { }
         }
     }
 
@@ -301,7 +399,6 @@ public class StateMachine extends StateMachineBase {
             try {
                 if (connected) {
                     bt.close(bleAddress);
-                    connected = false;
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
@@ -309,4 +406,59 @@ public class StateMachine extends StateMachineBase {
         }
     }
 
+    @Override
+    protected void onMain_DisconnectButtonAction(Component c, ActionEvent event) {
+        if (connected) {
+            try {
+                if (bt != null) {
+                    bt.close(bleAddress);
+                }
+
+                connected = false;
+                enableButtons(false);
+                
+                console.setText("BLE Disconnected By User");
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Print method to append to the console
+     *
+     * @param text
+     */
+    private void print(String text, boolean append) {
+        Display.getInstance().callSerially(new Runnable() {
+            @Override
+            public void run() {
+                if(append) {
+                    String oldText = console.getText();
+                    String newText = oldText + "\n" + text;
+
+                    console.setText(newText);
+                } else {
+                    console.setText(text);
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onMain_AutoReadCheckBoxAction(Component c, ActionEvent event) {
+        CheckBox cb = findAutoReadCheckBox();
+        if(cb.isSelected()) {
+            print("Reading sensor data ...", false);
+            
+            // start thread to read data here every 5 seconds
+        } else {
+            autoRead = false;
+        }
+    }
+
+    @Override
+    protected void onMain_ReadButtonAction(Component c, ActionEvent event) {
+        splitAndSend("GET CONFIG");
+    }
 }
