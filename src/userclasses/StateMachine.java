@@ -18,6 +18,7 @@ import com.codename1.util.Base64;
 import com.codename1.util.StringUtil;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -237,7 +238,7 @@ public class StateMachine extends StateMachineBase {
             bt.discover(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent evt) {
-                    print("Bluetooth LE Information Received ...", true);
+                    print("BLE Information Received ...", true);
                     addSubscriber();
                 }
 
@@ -300,16 +301,16 @@ public class StateMachine extends StateMachineBase {
     }
 
     /**
-     * Send text but first add CR LF and then encode in base64 otherwise doesn't
-     * work
-     *
+     * Send text but first then encode in base64 
+     * otherwise it doesn't work
+     * 
      * @param text
      */
     private void sendText(final String data) {
 
         // check to make sure we not running on simulator
         if (bt == null) {
-            print("BLE null >> Data Sent: " + data, true);
+            System.out.println("Data Sent: " + data);
             return;
         }
 
@@ -336,8 +337,9 @@ public class StateMachine extends StateMachineBase {
     
     /**
      * Used for send the long text since apparent BLE you can only 
-     * send 23 bytes at a time. As such split ascii text into chucks of 
-     * 20 characters
+     * send 23 bytes at a time. As such split ascii text into chunks of 
+     * 20 characters to prevent any issues
+     * 
      */
     private void splitAndSend(String text) {
         text += "\r\n";
@@ -365,6 +367,9 @@ public class StateMachine extends StateMachineBase {
     @Override
     protected void onMain_UpdateButtonAction(Component c, ActionEvent event) {
         if (connected) {
+            Date now = new Date();
+            splitAndSend("SET TIME " + now.getTime());
+            
             String text = findLocationTextField().getText();
             splitAndSend("SET LOCATION " + text);
             
@@ -451,7 +456,28 @@ public class StateMachine extends StateMachineBase {
         if(cb.isSelected()) {
             print("Reading sensor data ...", false);
             
-            // start thread to read data here every 5 seconds
+            // start thread to send data here every 5 seconds
+            Thread thread = new Thread("Data Read Thread") {
+                public void run(){
+                    while(true) {
+                        if(!autoRead) {
+                            break;
+                        }
+                        
+                        // request data by send get status
+                        splitAndSend("GET STATUS");
+                        
+                        try {
+                            // sleep for 5 seconds before requesting more data
+                            Thread.sleep(5000);
+                        } catch (InterruptedException ex) {
+                            break;
+                        }
+                    }
+                }
+            };
+            
+            thread.start();
         } else {
             autoRead = false;
         }
