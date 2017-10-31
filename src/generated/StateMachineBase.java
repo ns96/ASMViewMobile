@@ -460,6 +460,18 @@ public abstract class StateMachineBase extends UIBuilder {
         return cmp;
     }
 
+    public com.codename1.ui.Label findOnlineLabel(Component root) {
+        return (com.codename1.ui.Label)findByName("onlineLabel", root);
+    }
+
+    public com.codename1.ui.Label findOnlineLabel() {
+        com.codename1.ui.Label cmp = (com.codename1.ui.Label)findByName("onlineLabel", Display.getInstance().getCurrent());
+        if(cmp == null && aboutToShowThisContainer != null) {
+            cmp = (com.codename1.ui.Label)findByName("onlineLabel", aboutToShowThisContainer);
+        }
+        return cmp;
+    }
+
     public com.codename1.ui.Button findPostButton(Component root) {
         return (com.codename1.ui.Button)findByName("postButton", root);
     }

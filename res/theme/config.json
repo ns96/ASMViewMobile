@@ -1,0 +1,11 @@
+{
+    "now": "1502467659",
+    "location": "GRH25",   
+    "name": "Node1a",
+    "wifi": "GHR25Wifi",
+    "password": "498C70F355",
+    "url": "http://api-quadroponic.rhcloud.com/v1/record/sensordata",
+    "sync": 15,
+    "firmware": "firmwarev1.hex",
+    "online": "yes"
+}

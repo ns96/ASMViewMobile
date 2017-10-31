@@ -9,6 +9,7 @@ import ca.weblite.codename1.json.JSONException;
 import ca.weblite.codename1.json.JSONObject;
 import com.codename1.bluetoothle.Bluetooth;
 import com.codename1.components.InfiniteProgress;
+import com.codename1.io.Util;
 import generated.StateMachineBase;
 import com.codename1.ui.*;
 import com.codename1.ui.events.*;
@@ -17,12 +18,15 @@ import com.codename1.ui.util.Resources;
 import com.codename1.util.Base64;
 import com.codename1.util.StringUtil;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -45,9 +49,11 @@ public class StateMachine extends StateMachineBase {
     // global gui components
     private TextArea console;
 
-    private boolean onSimulator = false;
+    private boolean onSimulator;
     
     private boolean autoRead = true;
+    
+    private boolean updateSetup = false;
 
     public StateMachine(String resFile) {
         super(resFile);
@@ -67,6 +73,8 @@ public class StateMachine extends StateMachineBase {
         if (os != null && os.indexOf("Windows") != -1) {
             System.out.println("Running on simulator");
             onSimulator = true;
+        } else {
+            onSimulator = false;
         }
     }
     
@@ -297,9 +305,72 @@ public class StateMachine extends StateMachineBase {
 
     private void processData(String data) {
         data = data.trim();
-        print("Data received: " + data, true);
+        
+        // checok what data we have
+        if(data.indexOf("online") != -1) {
+            JSONObject json = getJSON(data);
+            processConfigData(json);
+        } else if(data.indexOf("environment") != -1) {
+            JSONObject json = getJSON(data);
+            processStatusData(json);
+        } else {
+            print("Data received: " + data, true);
+        }
     }
-
+    
+    /**
+     * Process config data from the asm data
+     * @param json 
+     */
+    private void processConfigData(JSONObject json) {
+        if(updateSetup) {
+            try {
+                findLocationTextField().setText(json.getString("location"));
+                findNameTextField().setText(json.getString("name"));
+                findSsidTextField().setText(json.getString("wifi"));
+                findPasswordTextField().setText(json.getString("password"));
+                findUrlTextField().setText(json.getString("url"));
+                findOnlineLabel().setText("Online: " + json.getString("online").toUpperCase());
+            } catch (JSONException ex) { }
+        } else {
+            print("Data received:\n" + json.toString(), false);
+        }
+    }
+    
+    /**
+     * Process status data from the ASM sensor
+     * @param json 
+     */
+    private void processStatusData(JSONObject json) {
+        print("Data received:\n" + json.toString(), false);
+    }
+    
+    private JSONObject getJSON(String data) {
+        try {
+            return(new JSONObject(data));
+        } catch (JSONException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Method to read a file from the resource file
+     * 
+     * @param filename
+     * @return 
+     */
+    private String readFileFromResource(String filename) {
+        InputStream in = fetchResourceFile().getData(filename);
+        try {
+            String text = Util.readToString(in);
+            in.close();
+            return text;
+        } catch (IOException ex) { 
+            return "File Read Error";
+        }
+    }
+    
     /**
      * Send text but first then encode in base64 
      * otherwise it doesn't work
@@ -391,7 +462,7 @@ public class StateMachine extends StateMachineBase {
             // Sleep for a short time then send command to get status
             try {
                 Thread.sleep(200);
-                splitAndSend("GET STATUS");
+                splitAndSend("GET CONFIG");
             } catch (InterruptedException ex) { }
         }
     }
@@ -485,6 +556,12 @@ public class StateMachine extends StateMachineBase {
 
     @Override
     protected void onMain_ReadButtonAction(Component c, ActionEvent event) {
+        updateSetup = true;
         splitAndSend("GET CONFIG");
+        
+        if(onSimulator) {
+            String jsonText = readFileFromResource("config.json");
+            processData(jsonText);
+        }
     }
 }

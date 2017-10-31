@@ -1,0 +1,40 @@
+{
+    "hostname": "GRH25.Node1a",
+    "core_version": "0.1",
+    "now": "1502467659",
+    "firmware": "filename", 
+
+    "environment": {
+        "light": {
+            "lux": 4681
+        },
+        "light-rgb": {
+            "red": 255,
+            "green": 255,
+            "blue": 255
+        },
+        "air-1": {
+            "humidity": 43,
+            "temp": 87 			
+        },
+        "air-2": {
+            "humidity": 41.1,
+            "temp": 87
+        },
+        "co2": {
+            "k30": 1350,
+            "mg811": 400
+        }
+    },
+    "other": {
+        "analog_1": 99,
+        "analog_2": 550,
+        "analog_3": 5.7,
+        "analog_4": 1063,
+        "gpio_1": 87,
+        "gpio_2": 0,
+        "i2c_1": 500,
+        "i2c_2": 0,
+        "battery": 55
+    }
+}

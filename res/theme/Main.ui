@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<component type="Form" name="Main" cloudDestinationProperty="Main" scrollableY="false" layout="BorderLayout" borderLayoutAbsoluteCenter="false" title="ASMView v0.1.66 (10/27/2017)" >
+<component type="Form" name="Main" cloudDestinationProperty="Main" scrollableY="false" layout="BorderLayout" borderLayoutAbsoluteCenter="false" title="ASMView v0.1.68 (10/31/2017)" >
   <component type="Tabs" name="Tabs1" cloudDestinationProperty="Tabs1" >
     <layoutConstraint value="Center" />
     <custom name="titles" type="java.lang.String" array="true" dimensions="1" >
@@ -36,6 +36,8 @@
         <component type="TextField" name="urlTextField" cloudBoundProperty="text" cloudDestinationProperty="urlTextField" text="http://api-quadroponic.rhcloud.com/v1/record/sensordata" >
         </component>
         <component type="Picker" name="syncPicker" cloudDestinationProperty="syncPicker" text="Server Sync Schedule" >
+        </component>
+        <component type="Label" name="onlineLabel" cloudDestinationProperty="connectLabel" text="Online: ?" >
         </component>
         <component type="Button" name="readButton" cloudDestinationProperty="readButton" enabled="false" text="Read" >
         </component>
