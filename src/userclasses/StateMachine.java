@@ -25,8 +25,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 /**
@@ -54,6 +52,8 @@ public class StateMachine extends StateMachineBase {
     private boolean autoRead = true;
     
     private boolean updateSetup = false;
+    
+    private boolean getFile = false;
 
     public StateMachine(String resFile) {
         super(resFile);
@@ -72,6 +72,7 @@ public class StateMachine extends StateMachineBase {
         String os = System.getProperty("os.name");
         if (os != null && os.indexOf("Windows") != -1) {
             System.out.println("Running on simulator");
+            bt = null;
             onSimulator = true;
         } else {
             onSimulator = false;
@@ -307,7 +308,7 @@ public class StateMachine extends StateMachineBase {
         data = data.trim();
         
         // checok what data we have
-        if(data.indexOf("online") != -1) {
+        if(data.indexOf("config") != -1) {
             JSONObject json = getJSON(data);
             processConfigData(json);
         } else if(data.indexOf("environment") != -1) {
@@ -324,6 +325,7 @@ public class StateMachine extends StateMachineBase {
      */
     private void processConfigData(JSONObject json) {
         if(updateSetup) {
+            updateSetup = false;
             try {
                 findLocationTextField().setText(json.getString("location"));
                 findNameTextField().setText(json.getString("name"));
@@ -331,6 +333,28 @@ public class StateMachine extends StateMachineBase {
                 findPasswordTextField().setText(json.getString("password"));
                 findUrlTextField().setText(json.getString("url"));
                 findOnlineLabel().setText("Online: " + json.getString("online").toUpperCase());
+                
+                // update the picker for settung the sync
+                int sync = json.getInt("sync");
+                Picker picker = findSyncPicker();
+                
+                switch(sync) {
+                    case 10: 
+                        picker.setSelectedStringIndex(0);
+                        break;
+                    case 15: 
+                        picker.setSelectedStringIndex(1);
+                        break;
+                    case 30: 
+                        picker.setSelectedStringIndex(2);
+                        break;
+                    case 60: 
+                        picker.setSelectedStringIndex(3);
+                        break;
+                    default:
+                        picker.setSelectedStringIndex(0);
+                        break;
+                }
             } catch (JSONException ex) { }
         } else {
             print("Data received:\n" + json.toString(), false);
@@ -342,7 +366,38 @@ public class StateMachine extends StateMachineBase {
      * @param json 
      */
     private void processStatusData(JSONObject json) {
-        print("Data received:\n" + json.toString(), false);
+        try {
+            StringBuilder sb = new StringBuilder();
+            JSONObject edata = json.getJSONObject("environment");
+            JSONObject odata = json.getJSONObject("other");
+            
+            // get if the device is online and battery level
+            sb.append(new Date()).append(" >>\n\n");
+            sb.append("Online: ").append(json.getString("online").toUpperCase()).append("\n");
+            sb.append("% Battery: ").append(odata.get("battery")).append("\n\n");
+            
+            // get environment data
+            sb.append("Lux: ").append(edata.getJSONObject("light").get("lux")).append("\n");
+            sb.append("Temp 1: ").append(edata.getJSONObject("air-1").get("temp")).append("\n");
+            sb.append("Temp 2: ").append(edata.getJSONObject("air-2").get("temp")).append("\n");
+            sb.append("% RH 1: ").append(edata.getJSONObject("air-1").get("humidity")).append("\n");
+            sb.append("% RH 2: ").append(edata.getJSONObject("air-2").get("humidity")).append("\n");
+            sb.append("CO2-K30: ").append(edata.getJSONObject("co2").get("k30")).append("\n");
+            sb.append("CO2-MG811: ").append(edata.getJSONObject("co2").get("mg811")).append("\n\n");
+            
+            sb.append("analog_1: ").append(odata.get("analog_1")).append("\n");
+            sb.append("analog_2: ").append(odata.get("analog_2")).append("\n");
+            sb.append("analog_3: ").append(odata.get("analog_3")).append("\n");
+            sb.append("analog_4: ").append(odata.get("analog_4")).append("\n");
+            sb.append("gpio_1: ").append(odata.get("gpio_1")).append("\n");
+            sb.append("gpio_2: ").append(odata.get("gpio_2")).append("\n");
+            sb.append("i2c_1: ").append(odata.get("i2c_1")).append("\n");
+            sb.append("i2c_2: ").append(odata.get("i2c_2")).append("\n");
+            
+            print(sb.toString(), false);
+        } catch (JSONException ex) {
+            ex.printStackTrace();
+        }
     }
     
     private JSONObject getJSON(String data) {
@@ -538,6 +593,11 @@ public class StateMachine extends StateMachineBase {
                         // request data by send get status
                         splitAndSend("GET STATUS");
                         
+                        if(onSimulator) {
+                            String jsonText = readFileFromResource("asm.json");
+                            processData(jsonText);
+                        }
+                        
                         try {
                             // sleep for 5 seconds before requesting more data
                             Thread.sleep(5000);
@@ -563,5 +623,29 @@ public class StateMachine extends StateMachineBase {
             String jsonText = readFileFromResource("config.json");
             processData(jsonText);
         }
+    }
+
+    @Override
+    protected void onMain_GetFilesButtonAction(Component c, ActionEvent event) {
+        // stop the auto read thread if it's active
+        autoRead = false;
+        findAutoReadCheckBox().setSelected(false);
+        findGetFilesButton().setEnabled(false);
+        Label label = findFileCountLabel();
+        
+        int count = Integer.parseInt(findNumberOfFilesTextField().getText());
+        for(int i = 1; i <= count; i++) {
+            splitAndSend("GET FILE " + i);
+            
+            try {
+                Thread.sleep(5000);
+             } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+            
+            label.setText(i + " loaded...");
+        }
+        
+        findGetFilesButton().setEnabled(true);
     }
 }
