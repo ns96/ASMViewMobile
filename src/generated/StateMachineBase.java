@@ -244,6 +244,18 @@ public abstract class StateMachineBase extends UIBuilder {
         return cmp;
     }
 
+    public com.codename1.ui.Button findPlotButton(Component root) {
+        return (com.codename1.ui.Button)findByName("plotButton", root);
+    }
+
+    public com.codename1.ui.Button findPlotButton() {
+        com.codename1.ui.Button cmp = (com.codename1.ui.Button)findByName("plotButton", Display.getInstance().getCurrent());
+        if(cmp == null && aboutToShowThisContainer != null) {
+            cmp = (com.codename1.ui.Button)findByName("plotButton", aboutToShowThisContainer);
+        }
+        return cmp;
+    }
+
     public com.codename1.ui.Label findUrlLabel(Component root) {
         return (com.codename1.ui.Label)findByName("urlLabel", root);
     }
@@ -268,6 +280,18 @@ public abstract class StateMachineBase extends UIBuilder {
         return cmp;
     }
 
+    public com.codename1.ui.TextField findNumberOfFilesTextField(Component root) {
+        return (com.codename1.ui.TextField)findByName("numberOfFilesTextField", root);
+    }
+
+    public com.codename1.ui.TextField findNumberOfFilesTextField() {
+        com.codename1.ui.TextField cmp = (com.codename1.ui.TextField)findByName("numberOfFilesTextField", Display.getInstance().getCurrent());
+        if(cmp == null && aboutToShowThisContainer != null) {
+            cmp = (com.codename1.ui.TextField)findByName("numberOfFilesTextField", aboutToShowThisContainer);
+        }
+        return cmp;
+    }
+
     public com.codename1.ui.spinner.Picker findSyncPicker(Component root) {
         return (com.codename1.ui.spinner.Picker)findByName("syncPicker", root);
     }
@@ -276,6 +300,18 @@ public abstract class StateMachineBase extends UIBuilder {
         com.codename1.ui.spinner.Picker cmp = (com.codename1.ui.spinner.Picker)findByName("syncPicker", Display.getInstance().getCurrent());
         if(cmp == null && aboutToShowThisContainer != null) {
             cmp = (com.codename1.ui.spinner.Picker)findByName("syncPicker", aboutToShowThisContainer);
+        }
+        return cmp;
+    }
+
+    public com.codename1.ui.Label findFileCountLabel(Component root) {
+        return (com.codename1.ui.Label)findByName("fileCountLabel", root);
+    }
+
+    public com.codename1.ui.Label findFileCountLabel() {
+        com.codename1.ui.Label cmp = (com.codename1.ui.Label)findByName("fileCountLabel", Display.getInstance().getCurrent());
+        if(cmp == null && aboutToShowThisContainer != null) {
+            cmp = (com.codename1.ui.Label)findByName("fileCountLabel", aboutToShowThisContainer);
         }
         return cmp;
     }
@@ -376,18 +412,6 @@ public abstract class StateMachineBase extends UIBuilder {
         return cmp;
     }
 
-    public com.codename1.ui.Label findDataLabel(Component root) {
-        return (com.codename1.ui.Label)findByName("dataLabel", root);
-    }
-
-    public com.codename1.ui.Label findDataLabel() {
-        com.codename1.ui.Label cmp = (com.codename1.ui.Label)findByName("dataLabel", Display.getInstance().getCurrent());
-        if(cmp == null && aboutToShowThisContainer != null) {
-            cmp = (com.codename1.ui.Label)findByName("dataLabel", aboutToShowThisContainer);
-        }
-        return cmp;
-    }
-
     public com.codename1.ui.CheckBox findAutoReadCheckBox(Component root) {
         return (com.codename1.ui.CheckBox)findByName("autoReadCheckBox", root);
     }
@@ -436,14 +460,14 @@ public abstract class StateMachineBase extends UIBuilder {
         return cmp;
     }
 
-    public com.codename1.ui.Button findFilesButton(Component root) {
-        return (com.codename1.ui.Button)findByName("filesButton", root);
+    public com.codename1.ui.Button findGetFilesButton(Component root) {
+        return (com.codename1.ui.Button)findByName("getFilesButton", root);
     }
 
-    public com.codename1.ui.Button findFilesButton() {
-        com.codename1.ui.Button cmp = (com.codename1.ui.Button)findByName("filesButton", Display.getInstance().getCurrent());
+    public com.codename1.ui.Button findGetFilesButton() {
+        com.codename1.ui.Button cmp = (com.codename1.ui.Button)findByName("getFilesButton", Display.getInstance().getCurrent());
         if(cmp == null && aboutToShowThisContainer != null) {
-            cmp = (com.codename1.ui.Button)findByName("filesButton", aboutToShowThisContainer);
+            cmp = (com.codename1.ui.Button)findByName("getFilesButton", aboutToShowThisContainer);
         }
         return cmp;
     }
@@ -468,18 +492,6 @@ public abstract class StateMachineBase extends UIBuilder {
         com.codename1.ui.Label cmp = (com.codename1.ui.Label)findByName("onlineLabel", Display.getInstance().getCurrent());
         if(cmp == null && aboutToShowThisContainer != null) {
             cmp = (com.codename1.ui.Label)findByName("onlineLabel", aboutToShowThisContainer);
-        }
-        return cmp;
-    }
-
-    public com.codename1.ui.Button findPostButton(Component root) {
-        return (com.codename1.ui.Button)findByName("postButton", root);
-    }
-
-    public com.codename1.ui.Button findPostButton() {
-        com.codename1.ui.Button cmp = (com.codename1.ui.Button)findByName("postButton", Display.getInstance().getCurrent());
-        if(cmp == null && aboutToShowThisContainer != null) {
-            cmp = (com.codename1.ui.Button)findByName("postButton", aboutToShowThisContainer);
         }
         return cmp;
     }
@@ -662,12 +674,16 @@ public abstract class StateMachineBase extends UIBuilder {
                 onMain_AutoReadCheckBoxAction(c, event);
                 return;
             }
-            if("filesButton".equals(c.getName())) {
-                onMain_FilesButtonAction(c, event);
+            if("getFilesButton".equals(c.getName())) {
+                onMain_GetFilesButtonAction(c, event);
                 return;
             }
-            if("postButton".equals(c.getName())) {
-                onMain_PostButtonAction(c, event);
+            if("numberOfFilesTextField".equals(c.getName())) {
+                onMain_NumberOfFilesTextFieldAction(c, event);
+                return;
+            }
+            if("plotButton".equals(c.getName())) {
+                onMain_PlotButtonAction(c, event);
                 return;
             }
         }
@@ -712,10 +728,13 @@ public abstract class StateMachineBase extends UIBuilder {
       protected void onMain_AutoReadCheckBoxAction(Component c, ActionEvent event) {
       }
 
-      protected void onMain_FilesButtonAction(Component c, ActionEvent event) {
+      protected void onMain_GetFilesButtonAction(Component c, ActionEvent event) {
       }
 
-      protected void onMain_PostButtonAction(Component c, ActionEvent event) {
+      protected void onMain_NumberOfFilesTextFieldAction(Component c, ActionEvent event) {
+      }
+
+      protected void onMain_PlotButtonAction(Component c, ActionEvent event) {
       }
 
 }

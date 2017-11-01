@@ -3,7 +3,8 @@
     "core_version": "0.1",
     "now": "1502467659",
     "firmware": "filename", 
-
+    "online": "YES",
+    
     "environment": {
         "light": {
             "lux": 4681
