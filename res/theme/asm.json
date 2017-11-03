@@ -1,5 +1,7 @@
 {
-    "hostname": "GRH25.Node1a",
+    "type": "status",
+    "location": "GRH001",
+    "hostname": "Node1a",
     "core_version": "0.1",
     "now": "1502467659",
     "firmware": "filename", 

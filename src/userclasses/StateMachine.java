@@ -9,14 +9,20 @@ import ca.weblite.codename1.json.JSONException;
 import ca.weblite.codename1.json.JSONObject;
 import com.codename1.bluetoothle.Bluetooth;
 import com.codename1.components.InfiniteProgress;
+import com.codename1.components.ToastBar;
+import com.codename1.io.Preferences;
+import com.codename1.io.Storage;
 import com.codename1.io.Util;
 import generated.StateMachineBase;
 import com.codename1.ui.*;
 import com.codename1.ui.events.*;
+import com.codename1.ui.list.DefaultListModel;
+import com.codename1.ui.list.MultiList;
 import com.codename1.ui.spinner.Picker;
 import com.codename1.ui.util.Resources;
 import com.codename1.util.Base64;
 import com.codename1.util.StringUtil;
+import com.leaflift.asm.ASMData;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -45,15 +51,22 @@ public class StateMachine extends StateMachineBase {
     private boolean connected = false;
 
     // global gui components
+    private Form mainForm;
     private TextArea console;
-
+    
     private boolean onSimulator;
+    
+    private int simulatorCount;
     
     private boolean autoRead = true;
     
     private boolean updateSetup = false;
     
     private boolean getFile = false;
+    
+    private JSONObject configJSON;
+    
+    private HashMap<String, ASMData> dataFiles;
 
     public StateMachine(String resFile) {
         super(resFile);
@@ -74,8 +87,24 @@ public class StateMachine extends StateMachineBase {
             System.out.println("Running on simulator");
             bt = null;
             onSimulator = true;
+            simulatorCount = 1;
         } else {
             onSimulator = false;
+            simulatorCount = 0;
+        }
+        
+        // initiate or load the hashmap for storing data
+        //Object object = Storage.getInstance().readObject("dataFiles");
+        Object object = null;
+        
+        if(object == null) {
+            dataFiles = new HashMap<>();
+        } else {
+            dataFiles = (HashMap<String, ASMData>)object;
+        }
+        
+        for(String file : Storage.getInstance().listEntries()) {
+            System.out.println("Storage file: " + file);
         }
     }
     
@@ -92,7 +121,10 @@ public class StateMachine extends StateMachineBase {
     @Override
     protected void beforeMain(Form f) {
         super.beforeMain(f); //To change body of generated methods, choose Tools | Templates.
-
+        
+        // the main form
+        mainForm = f;
+        
         // set the conole object
         console = findSensorTextArea(f);
 
@@ -100,6 +132,23 @@ public class StateMachine extends StateMachineBase {
         Picker sp = findSyncPicker(f);
         sp.setStrings("Sync Every 10 min", "Sync Every 15 min", "Sync Every 30 min", "Sync Every 60 min");
         sp.setSelectedStringIndex(1);
+        
+        // update the setup panel from stored value
+        configJSON = new JSONObject();
+        try {
+            configJSON.put("location", Preferences.get("location", "GRH55"));
+            configJSON.put("hostname", Preferences.get("name", "Node0A"));
+            configJSON.put("wifi", Preferences.get("wifi", "GRH55Wifi"));
+            configJSON.put("password", Preferences.get("password", "000C00F000"));
+            configJSON.put("url", Preferences.get("url", "http://api-quadroponic.rhcloud.com/v1/record/sensordata"));
+            configJSON.put("sync", Preferences.get("sync", "30"));
+            configJSON.put("online", Preferences.get("online", "?"));
+            
+            updateSetup = true;
+            processConfigData(configJSON);
+        } catch (JSONException ex) {
+            ex.printStackTrace();
+        }
     }
 
     @Override
@@ -307,36 +356,43 @@ public class StateMachine extends StateMachineBase {
     private void processData(String data) {
         data = data.trim();
         
-        // checok what data we have
+        // cheok what data we have
         if(data.indexOf("config") != -1) {
             JSONObject json = getJSON(data);
             processConfigData(json);
         } else if(data.indexOf("environment") != -1) {
             JSONObject json = getJSON(data);
-            processStatusData(json);
+            
+            if(!getFile) {
+                processStatusData(json);
+            } else {
+                storeStatusData(json);
+            }
         } else {
             print("Data received: " + data, true);
         }
     }
     
     /**
-     * Process config data from the asm data
+     * Process config data from the asm or which was stored in preferences
+     * 
      * @param json 
      */
     private void processConfigData(JSONObject json) {
         if(updateSetup) {
             updateSetup = false;
+            
             try {
-                findLocationTextField().setText(json.getString("location"));
-                findNameTextField().setText(json.getString("name"));
-                findSsidTextField().setText(json.getString("wifi"));
-                findPasswordTextField().setText(json.getString("password"));
-                findUrlTextField().setText(json.getString("url"));
-                findOnlineLabel().setText("Online: " + json.getString("online").toUpperCase());
+                findLocationTextField(mainForm).setText(json.getString("location"));
+                findNameTextField(mainForm).setText(json.getString("hostname"));
+                findSsidTextField(mainForm).setText(json.getString("wifi"));
+                findPasswordTextField(mainForm).setText(json.getString("password"));
+                findUrlTextField(mainForm).setText(json.getString("url"));
+                findOnlineLabel(mainForm).setText("Online: " + json.getString("online").toUpperCase());
                 
                 // update the picker for settung the sync
                 int sync = json.getInt("sync");
-                Picker picker = findSyncPicker();
+                Picker picker = findSyncPicker(mainForm);
                 
                 switch(sync) {
                     case 10: 
@@ -357,7 +413,7 @@ public class StateMachine extends StateMachineBase {
                 }
             } catch (JSONException ex) { }
         } else {
-            print("Data received:\n" + json.toString(), false);
+            print("Device Configured:\n" + json.toString(), false);
         }
     }
     
@@ -400,6 +456,68 @@ public class StateMachine extends StateMachineBase {
         }
     }
     
+    /**
+     * Store status data from the ASM sensor to local storage
+     * @param json 
+     */
+    private void storeStatusData(JSONObject json) {
+        try {
+            // set the time in case the time was set on the device correctly
+            Date now = new Date();
+            Long time =  now.getTime();
+            json.put("now",time);
+            
+            String location = json.getString("location");
+            String name = json.getString("hostname");
+            if(onSimulator) {
+                name += "_" + simulatorCount;
+            }
+            
+            String key = location + "." + name;
+            
+            ASMData data = null;
+            if(dataFiles.containsKey(key)) {
+                data = dataFiles.get(key);
+            } else {
+                data = new ASMData(location, name);
+                dataFiles.put(key, data);
+            }
+            
+            data.add(json.toString(), time);
+            
+            // save the hashmap to storage now
+            //Storage.getInstance().writeObject("dataFiles", dataFiles);
+            //System.out.println("Saving Data file object");
+        } catch (JSONException ex) {
+            ex.printStackTrace();
+        }
+    }
+    
+    
+    private void updateListEntry() {
+        MultiList list = findDataMultiList();
+        DefaultListModel model = new DefaultListModel();
+        
+        for(String key: dataFiles.keySet()) {
+            ASMData data = dataFiles.get(key);
+            
+            String name = data.toString();
+            String info = data.getDataRange();
+        
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("Line1", name);
+            entry.put("Line2", info);
+            model.addItem(entry);
+        }
+        
+        list.setModel(model);
+    }
+    
+    /**
+     * Method to convert json string into json object
+     * @param data
+     * @return 
+     */
     private JSONObject getJSON(String data) {
         try {
             return(new JSONObject(data));
@@ -497,21 +615,27 @@ public class StateMachine extends StateMachineBase {
             splitAndSend("SET TIME " + now.getTime());
             
             String text = findLocationTextField().getText();
+            Preferences.set("location", text);
             splitAndSend("SET LOCATION " + text);
             
             text = findNameTextField().getText();
+            Preferences.set("name", text);
             splitAndSend("SET NAME " + text);
             
             text = findSsidTextField().getText();
+            Preferences.set("wifi", text);
             splitAndSend("SET WIFI " + text);
             
             text = findPasswordTextField().getText();
+            Preferences.set("password", text);
             splitAndSend("SET PASSWORD " + text);
             
             text = findUrlTextField().getText();
+            Preferences.set("url", text);
             splitAndSend("SET URL " + text);
             
             text = StringUtil.tokenize(findSyncPicker().getSelectedString(), " ").get(2);
+            Preferences.set("sync", text);
             splitAndSend("SET SYNC " + text);
             
             // Sleep for a short time then send command to get status
@@ -519,6 +643,10 @@ public class StateMachine extends StateMachineBase {
                 Thread.sleep(200);
                 splitAndSend("GET CONFIG");
             } catch (InterruptedException ex) { }
+            
+            if(onSimulator) {
+                processConfigData(configJSON);
+            }
         }
     }
 
@@ -580,6 +708,7 @@ public class StateMachine extends StateMachineBase {
     protected void onMain_AutoReadCheckBoxAction(Component c, ActionEvent event) {
         CheckBox cb = findAutoReadCheckBox();
         if(cb.isSelected()) {
+            autoRead = true;
             print("Reading sensor data ...", false);
             
             // start thread to send data here every 5 seconds
@@ -629,23 +758,62 @@ public class StateMachine extends StateMachineBase {
     protected void onMain_GetFilesButtonAction(Component c, ActionEvent event) {
         // stop the auto read thread if it's active
         autoRead = false;
+        getFile = true;
+        
         findAutoReadCheckBox().setSelected(false);
         findGetFilesButton().setEnabled(false);
-        Label label = findFileCountLabel();
         
-        int count = Integer.parseInt(findNumberOfFilesTextField().getText());
-        for(int i = 1; i <= count; i++) {
-            splitAndSend("GET FILE " + i);
-            
-            try {
-                Thread.sleep(5000);
-             } catch (InterruptedException ex) {
-                ex.printStackTrace();
-            }
-            
-            label.setText(i + " loaded...");
-        }
+        final ToastBar.Status status = ToastBar.getInstance().createStatus();
+        status.setMessage("Loading files ...");
+        //status.setProgress(0);
+        status.setShowProgressIndicator(true);
+        status.show();
         
-        findGetFilesButton().setEnabled(true);
+        Thread thread = new Thread("File Read Thread") {
+                public void run(){
+                    int count = Integer.parseInt(findNumberOfFilesTextField().getText());
+                    for(int i = 1; i <= count; i++) {
+                        if(!getFile) break;
+                        
+                        splitAndSend("GET FILE " + i);
+                        status.setMessage("Getting file " + i  + " out of " + count);
+                        status.show();
+                        
+                        if(onSimulator) {
+                            String jsonText = readFileFromResource("asm.json");
+                            processData(jsonText);
+                        }
+                        
+                        // wait 5 seconds hopefully data was loaded by then
+                        try {
+                            Thread.sleep(1000); // **** CHANGE TO 5000 ****
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        }
+                    }   
+                    
+                    getFile = false;
+                    status.clear();
+                    updateListEntry();
+                    findGetFilesButton().setEnabled(true);
+                    
+                    if(onSimulator) {
+                        simulatorCount++;
+                    }
+                }
+        };
+        thread.start();
+    }
+
+    @Override
+    protected void onMain_StopButtonAction(Component c, ActionEvent event) {
+        getFile = false;
+    }
+
+    @Override
+    protected void onMain_DeleteButtonAction(Component c, ActionEvent event) {
+        Storage.getInstance().deleteStorageFile("dataFiles");
+        dataFiles.clear();
+        System.out.println("Storage file deleted ..." + dataFiles.size());
     }
 }

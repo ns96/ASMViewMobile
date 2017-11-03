@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<component type="Form" name="Main" cloudDestinationProperty="Main" scrollableY="false" layout="BorderLayout" borderLayoutAbsoluteCenter="false" title="ASMView v0.1.69 (11/01/2017)" >
+<component type="Form" name="Main" cloudDestinationProperty="Main" scrollableY="false" layout="BorderLayout" borderLayoutAbsoluteCenter="false" title="ASMView v0.1.69 (11/03/2017)" >
   <component type="Tabs" name="Tabs1" cloudDestinationProperty="Tabs1" >
     <layoutConstraint value="Center" />
     <custom name="titles" type="java.lang.String" array="true" dimensions="1" >
@@ -58,38 +58,24 @@
       </component>
     </component>
     <component type="Container" name="Container3" tabTitle="Data" cloudDestinationProperty="Container3" layout="BorderLayout" borderLayoutAbsoluteCenter="false" >
+      <component type="MultiList" name="dataMultiList" cloudDestinationProperty="dataMultiList" >
+        <layoutConstraint value="Center" />
+      </component>
       <component type="Container" name="Container5" cloudDestinationProperty="Container5" layout="GridLayout" gridLayoutRows="1" gridLayoutColumns="3" >
         <layoutConstraint value="North" />
         <component type="Button" name="getFilesButton" cloudDestinationProperty="postButton" text="Get Files" >
         </component>
         <component type="TextField" name="numberOfFilesTextField" cloudBoundProperty="text" cloudDestinationProperty="numberOfFilesTextField" text="10" constraint="2" >
         </component>
-        <component type="Label" name="fileCountLabel" cloudDestinationProperty="fileCountLabel" text="O loaded" >
+        <component type="Button" name="stopButton" cloudDestinationProperty="stopButton" text="Stop" >
         </component>
       </component>
-      <component type="Table" name="dataFilesTable" cloudDestinationProperty="Table" >
-        <layoutConstraint value="Center" />
-        <custom name="data" type="java.lang.String" array="true" dimensions="2" >
-          <arr>            <str>1</str>
-            <str>Node 1</str>
-            <str>500</str>
-            <str>6/10/2017 - 9/10/2017</str>
-          </arr>
-          <arr>            <str>2</str>
-            <str>Node 2</str>
-            <str>200</str>
-            <str>6/10/2017 - 9/11/2017</str>
-          </arr>
-        </custom>
-        <custom name="header" type="java.lang.String" array="true" dimensions="1" >
-          <str>Node</str>
-          <str>Name</str>
-          <str>Datafiles</str>
-          <str>Date Range</str>
-        </custom>
-      </component>
-      <component type="Button" name="plotButton" cloudDestinationProperty="plotButton" text="Plot Selected Data" >
+      <component type="Container" name="Container6" cloudDestinationProperty="Container6" layout="BoxLayout" boxLayoutAxis="Y" >
         <layoutConstraint value="South" />
+        <component type="Button" name="plotButton" cloudDestinationProperty="plotButton" enabled="false" text="Plot" >
+        </component>
+        <component type="Button" name="deleteButton" cloudDestinationProperty="deleteButton" text="Delete" >
+        </component>
       </component>
     </component>
   </component>

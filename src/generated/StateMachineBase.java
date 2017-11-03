@@ -34,7 +34,6 @@ public abstract class StateMachineBase extends UIBuilder {
     public Container startApp(Resources res, String resPath, boolean loadTheme) {
         initVars();
         UIBuilder.registerCustomComponent("Container", com.codename1.ui.Container.class);
-        UIBuilder.registerCustomComponent("Table", com.codename1.ui.table.Table.class);
         UIBuilder.registerCustomComponent("Form", com.codename1.ui.Form.class);
         UIBuilder.registerCustomComponent("Button", com.codename1.ui.Button.class);
         UIBuilder.registerCustomComponent("TextArea", com.codename1.ui.TextArea.class);
@@ -43,6 +42,7 @@ public abstract class StateMachineBase extends UIBuilder {
         UIBuilder.registerCustomComponent("Label", com.codename1.ui.Label.class);
         UIBuilder.registerCustomComponent("Tabs", com.codename1.ui.Tabs.class);
         UIBuilder.registerCustomComponent("TextField", com.codename1.ui.TextField.class);
+        UIBuilder.registerCustomComponent("MultiList", com.codename1.ui.list.MultiList.class);
         if(loadTheme) {
             if(res == null) {
                 try {
@@ -78,7 +78,6 @@ public abstract class StateMachineBase extends UIBuilder {
     public Container createWidget(Resources res, String resPath, boolean loadTheme) {
         initVars();
         UIBuilder.registerCustomComponent("Container", com.codename1.ui.Container.class);
-        UIBuilder.registerCustomComponent("Table", com.codename1.ui.table.Table.class);
         UIBuilder.registerCustomComponent("Form", com.codename1.ui.Form.class);
         UIBuilder.registerCustomComponent("Button", com.codename1.ui.Button.class);
         UIBuilder.registerCustomComponent("TextArea", com.codename1.ui.TextArea.class);
@@ -87,6 +86,7 @@ public abstract class StateMachineBase extends UIBuilder {
         UIBuilder.registerCustomComponent("Label", com.codename1.ui.Label.class);
         UIBuilder.registerCustomComponent("Tabs", com.codename1.ui.Tabs.class);
         UIBuilder.registerCustomComponent("TextField", com.codename1.ui.TextField.class);
+        UIBuilder.registerCustomComponent("MultiList", com.codename1.ui.list.MultiList.class);
         if(loadTheme) {
             if(res == null) {
                 try {
@@ -144,6 +144,18 @@ public abstract class StateMachineBase extends UIBuilder {
         com.codename1.ui.TextArea cmp = (com.codename1.ui.TextArea)findByName("sensorTextArea", Display.getInstance().getCurrent());
         if(cmp == null && aboutToShowThisContainer != null) {
             cmp = (com.codename1.ui.TextArea)findByName("sensorTextArea", aboutToShowThisContainer);
+        }
+        return cmp;
+    }
+
+    public com.codename1.ui.Button findDeleteButton(Component root) {
+        return (com.codename1.ui.Button)findByName("deleteButton", root);
+    }
+
+    public com.codename1.ui.Button findDeleteButton() {
+        com.codename1.ui.Button cmp = (com.codename1.ui.Button)findByName("deleteButton", Display.getInstance().getCurrent());
+        if(cmp == null && aboutToShowThisContainer != null) {
+            cmp = (com.codename1.ui.Button)findByName("deleteButton", aboutToShowThisContainer);
         }
         return cmp;
     }
@@ -256,6 +268,18 @@ public abstract class StateMachineBase extends UIBuilder {
         return cmp;
     }
 
+    public com.codename1.ui.Container findContainer6(Component root) {
+        return (com.codename1.ui.Container)findByName("Container6", root);
+    }
+
+    public com.codename1.ui.Container findContainer6() {
+        com.codename1.ui.Container cmp = (com.codename1.ui.Container)findByName("Container6", Display.getInstance().getCurrent());
+        if(cmp == null && aboutToShowThisContainer != null) {
+            cmp = (com.codename1.ui.Container)findByName("Container6", aboutToShowThisContainer);
+        }
+        return cmp;
+    }
+
     public com.codename1.ui.Label findUrlLabel(Component root) {
         return (com.codename1.ui.Label)findByName("urlLabel", root);
     }
@@ -304,18 +328,6 @@ public abstract class StateMachineBase extends UIBuilder {
         return cmp;
     }
 
-    public com.codename1.ui.Label findFileCountLabel(Component root) {
-        return (com.codename1.ui.Label)findByName("fileCountLabel", root);
-    }
-
-    public com.codename1.ui.Label findFileCountLabel() {
-        com.codename1.ui.Label cmp = (com.codename1.ui.Label)findByName("fileCountLabel", Display.getInstance().getCurrent());
-        if(cmp == null && aboutToShowThisContainer != null) {
-            cmp = (com.codename1.ui.Label)findByName("fileCountLabel", aboutToShowThisContainer);
-        }
-        return cmp;
-    }
-
     public com.codename1.ui.Button findReadButton(Component root) {
         return (com.codename1.ui.Button)findByName("readButton", root);
     }
@@ -328,18 +340,6 @@ public abstract class StateMachineBase extends UIBuilder {
         return cmp;
     }
 
-    public com.codename1.ui.table.Table findDataFilesTable(Component root) {
-        return (com.codename1.ui.table.Table)findByName("dataFilesTable", root);
-    }
-
-    public com.codename1.ui.table.Table findDataFilesTable() {
-        com.codename1.ui.table.Table cmp = (com.codename1.ui.table.Table)findByName("dataFilesTable", Display.getInstance().getCurrent());
-        if(cmp == null && aboutToShowThisContainer != null) {
-            cmp = (com.codename1.ui.table.Table)findByName("dataFilesTable", aboutToShowThisContainer);
-        }
-        return cmp;
-    }
-
     public com.codename1.ui.Button findUpdateButton(Component root) {
         return (com.codename1.ui.Button)findByName("updateButton", root);
     }
@@ -348,6 +348,18 @@ public abstract class StateMachineBase extends UIBuilder {
         com.codename1.ui.Button cmp = (com.codename1.ui.Button)findByName("updateButton", Display.getInstance().getCurrent());
         if(cmp == null && aboutToShowThisContainer != null) {
             cmp = (com.codename1.ui.Button)findByName("updateButton", aboutToShowThisContainer);
+        }
+        return cmp;
+    }
+
+    public com.codename1.ui.list.MultiList findDataMultiList(Component root) {
+        return (com.codename1.ui.list.MultiList)findByName("dataMultiList", root);
+    }
+
+    public com.codename1.ui.list.MultiList findDataMultiList() {
+        com.codename1.ui.list.MultiList cmp = (com.codename1.ui.list.MultiList)findByName("dataMultiList", Display.getInstance().getCurrent());
+        if(cmp == null && aboutToShowThisContainer != null) {
+            cmp = (com.codename1.ui.list.MultiList)findByName("dataMultiList", aboutToShowThisContainer);
         }
         return cmp;
     }
@@ -496,6 +508,18 @@ public abstract class StateMachineBase extends UIBuilder {
         return cmp;
     }
 
+    public com.codename1.ui.Button findStopButton(Component root) {
+        return (com.codename1.ui.Button)findByName("stopButton", root);
+    }
+
+    public com.codename1.ui.Button findStopButton() {
+        com.codename1.ui.Button cmp = (com.codename1.ui.Button)findByName("stopButton", Display.getInstance().getCurrent());
+        if(cmp == null && aboutToShowThisContainer != null) {
+            cmp = (com.codename1.ui.Button)findByName("stopButton", aboutToShowThisContainer);
+        }
+        return cmp;
+    }
+
     protected void exitForm(Form f) {
         if("Main".equals(f.getName())) {
             exitMain(f);
@@ -612,6 +636,18 @@ public abstract class StateMachineBase extends UIBuilder {
     protected void setStateMain(Form f, Hashtable state) {
     }
 
+    protected boolean setListModel(List cmp) {
+        String listName = cmp.getName();
+        if("dataMultiList".equals(listName)) {
+            return initListModelDataMultiList(cmp);
+        }
+        return super.setListModel(cmp);
+    }
+
+    protected boolean initListModelDataMultiList(List cmp) {
+        return false;
+    }
+
     protected void handleComponentAction(Component c, ActionEvent event) {
         Container rootContainerAncestor = getRootAncestor(c);
         if(rootContainerAncestor == null) return;
@@ -674,6 +710,10 @@ public abstract class StateMachineBase extends UIBuilder {
                 onMain_AutoReadCheckBoxAction(c, event);
                 return;
             }
+            if("dataMultiList".equals(c.getName())) {
+                onMain_DataMultiListAction(c, event);
+                return;
+            }
             if("getFilesButton".equals(c.getName())) {
                 onMain_GetFilesButtonAction(c, event);
                 return;
@@ -682,8 +722,16 @@ public abstract class StateMachineBase extends UIBuilder {
                 onMain_NumberOfFilesTextFieldAction(c, event);
                 return;
             }
+            if("stopButton".equals(c.getName())) {
+                onMain_StopButtonAction(c, event);
+                return;
+            }
             if("plotButton".equals(c.getName())) {
                 onMain_PlotButtonAction(c, event);
+                return;
+            }
+            if("deleteButton".equals(c.getName())) {
+                onMain_DeleteButtonAction(c, event);
                 return;
             }
         }
@@ -728,13 +776,22 @@ public abstract class StateMachineBase extends UIBuilder {
       protected void onMain_AutoReadCheckBoxAction(Component c, ActionEvent event) {
       }
 
+      protected void onMain_DataMultiListAction(Component c, ActionEvent event) {
+      }
+
       protected void onMain_GetFilesButtonAction(Component c, ActionEvent event) {
       }
 
       protected void onMain_NumberOfFilesTextFieldAction(Component c, ActionEvent event) {
       }
 
+      protected void onMain_StopButtonAction(Component c, ActionEvent event) {
+      }
+
       protected void onMain_PlotButtonAction(Component c, ActionEvent event) {
+      }
+
+      protected void onMain_DeleteButtonAction(Component c, ActionEvent event) {
       }
 
 }
