@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 
 /**
@@ -41,10 +43,12 @@ import java.util.Set;
 public class StateMachine extends StateMachineBase {
 
     // https://github.com/adafruit/Bluefruit_LE_Connect_Android/blob/master/app/src/main/java/com/adafruit/bluefruit/le/connect/app/UartInterfaceActivity.java
-    public static final String UUID_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-    public static final String UUID_RX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
-    public static final String UUID_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-
+    private final String UUID_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    private final String UUID_RX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+    private final String UUID_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+    
+    private int delayTime = 5000; // set the delay when reading data
+    
     private Bluetooth bt;
     private Map devices = new HashMap();
     private String bleAddress;
@@ -88,23 +92,31 @@ public class StateMachine extends StateMachineBase {
             bt = null;
             onSimulator = true;
             simulatorCount = 1;
+            delayTime = 1000;
         } else {
             onSimulator = false;
             simulatorCount = 0;
+            delayTime = 5000;
+        }
+        
+        // DEBUG
+        for(String file : Storage.getInstance().listEntries()) {
+            System.out.println("Storage file: " + file);
         }
         
         // initiate or load the hashmap for storing data
         //Object object = Storage.getInstance().readObject("dataFiles");
         Object object = null;
+        try {
+            object = Storage.getInstance().readObject("dataFiles");
+        } catch(Exception ie) {
+            ie.printStackTrace();
+        }
         
         if(object == null) {
             dataFiles = new HashMap<>();
         } else {
             dataFiles = (HashMap<String, ASMData>)object;
-        }
-        
-        for(String file : Storage.getInstance().listEntries()) {
-            System.out.println("Storage file: " + file);
         }
     }
     
@@ -486,31 +498,39 @@ public class StateMachine extends StateMachineBase {
             data.add(json.toString(), time);
             
             // save the hashmap to storage now
-            //Storage.getInstance().writeObject("dataFiles", dataFiles);
-            //System.out.println("Saving Data file object");
+            Storage.getInstance().writeObject("dataFiles", dataFiles);
+            System.out.println("Saving Data file object");
         } catch (JSONException ex) {
             ex.printStackTrace();
         }
     }
     
-    
+    /**
+     * Update the data list UI
+     */
     private void updateListEntry() {
-        MultiList list = findDataMultiList();
-        DefaultListModel model = new DefaultListModel();
-        
-        for(String key: dataFiles.keySet()) {
-            ASMData data = dataFiles.get(key);
+        Display.getInstance().callSerially(new Runnable() {
+            @Override
+            public void run() {
+                MultiList list = findDataMultiList();
+                DefaultListModel model = new DefaultListModel();
+                
+                SortedSet<String> keys = new TreeSet<>(dataFiles.keySet());
+                for(String key: keys) {
+                    ASMData data = dataFiles.get(key);
             
-            String name = data.toString();
-            String info = data.getDataRange();
+                    String name = data.toString();
+                    String info = data.getDataRange();
         
-            Map<String, Object> entry = new HashMap<>();
-            entry.put("Line1", name);
-            entry.put("Line2", info);
-            model.addItem(entry);
-        }
+                    Map<String, Object> entry = new HashMap<>();
+                    entry.put("Line1", name);
+                    entry.put("Line2", info);
+                    model.addItem(entry);
+                }
         
-        list.setModel(model);
+                list.setModel(model);
+            }
+        });
     }
     
     /**
@@ -729,7 +749,7 @@ public class StateMachine extends StateMachineBase {
                         
                         try {
                             // sleep for 5 seconds before requesting more data
-                            Thread.sleep(5000);
+                            Thread.sleep(delayTime);
                         } catch (InterruptedException ex) {
                             break;
                         }
@@ -786,7 +806,7 @@ public class StateMachine extends StateMachineBase {
                         
                         // wait 5 seconds hopefully data was loaded by then
                         try {
-                            Thread.sleep(1000); // **** CHANGE TO 5000 ****
+                            Thread.sleep(delayTime);
                         } catch (InterruptedException ex) {
                             ex.printStackTrace();
                         }
