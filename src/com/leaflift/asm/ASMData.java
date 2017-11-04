@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Store json data from asm sensor so it can be saved to phone
@@ -17,9 +18,14 @@ public class ASMData implements Externalizable {
    
    private String location;
    private String nodeName;
-   private ArrayList<String> dataList = new ArrayList<>();
+   private List<String> dataList = new ArrayList<>();
    private Long minDate = 0L;
    private Long maxDate = 0L;
+   
+   public ASMData() {
+       location = "GRH001";
+       nodeName = "Node1A";
+   }
    
    public ASMData(String location, String nodeName) {
        this.location = location;
@@ -59,17 +65,17 @@ public class ASMData implements Externalizable {
         Util.writeUTF(location, out);
         Util.writeUTF(nodeName, out);
         Util.writeObject(dataList, out);
-        out.writeLong(minDate);
-        out.writeLong(maxDate);
+        Util.writeObject(minDate, out);
+        Util.writeObject(maxDate, out);
     }
 
     @Override
     public void internalize(int version, DataInputStream in) throws IOException {
         location = Util.readUTF(in);
         nodeName = Util.readUTF(in);
-        dataList = (ArrayList<String>) Util.readObject(in);
-        minDate = in.readLong();
-        maxDate = in.readLong();
+        dataList = (List<String>) Util.readObject(in);
+        minDate = (Long)Util.readObject(in);
+        maxDate = (Long)Util.readObject(in);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.leaflift.asm;
 
 
+import com.codename1.io.Util;
 import static com.codename1.ui.CN.*;
 import com.codename1.ui.Form;
 import userclasses.StateMachine;
@@ -20,6 +21,9 @@ public class ASMView {
 
         // Pro only feature, uncomment if you have a pro subscription
         // Log.bindCrashProtection(true);
+        
+        // Register the ASMData class so it can be serialized
+        Util.register("ASMData", ASMData.class);
     }
 
     public void start() {
